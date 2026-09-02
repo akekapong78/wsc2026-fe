@@ -1,0 +1,98 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary-pea: #5b21b6;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: #1e293b;
+  background-color: #fbfbfb;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* --- OMS scope: styling from wsc2026-fe-oms/globals.css --- */
+.oms-scope {
+  --primary-pea: #5b21b6;
+  --header-gold-from: #fae896;
+  --header-gold-to: #f7e07a;
+  --border-classic: #ababab;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Tahoma", sans-serif;
+  font-size: 11.5px;
+  color: #1a1a1a;
+  background-color: #e5e5e5;
+}
+
+.oms-scope ::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+.oms-scope ::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+.oms-scope ::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 2px;
+}
+.oms-scope ::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}
+
+.oms-scope .leaflet-container {
+  font-family: inherit !important;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+}
+.oms-scope .leaflet-popup-content-wrapper {
+  padding: 0 !important;
+  border-radius: 4px !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25) !important;
+  border: 1px solid #999 !important;
+}
+.oms-scope .leaflet-popup-content {
+  margin: 8px 10px !important;
+}
+.oms-scope .leaflet-control-zoom {
+  border: 1px solid #999 !important;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15) !important;
+}
+.oms-scope .leaflet-control-zoom-in,
+.oms-scope .leaflet-control-zoom-out {
+  background-color: #ffffff !important;
+  color: #333333 !important;
+  font-weight: bold !important;
+}
+
+/* --- VOC scope: styling from wsc2026-fe-voc/globals.css --- */
+.voc-scope {
+  --primary-pea: #6b21a8;
+  --primary-pea-hover: #581c87;
+  font-family: -apple-system, BlinkMacSystemFont, "Sarabun", "Prompt", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: #1e293b;
+  background-color: #fbfbfb;
+}
+
+.voc-scope ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.voc-scope ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+.voc-scope ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+.voc-scope ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
