@@ -36,6 +36,16 @@ export default function VocDashboardPage() {
 
   const [filters, setFilters] = useState<VocFilterState>(DEFAULT_FILTERS);
 
+  // Rows the user hasn't opened yet (via vocNo click) get an alert icon —
+  // same pattern as the OMS event table. Seeded from the first poll so
+  // cases that already existed before the dashboard was opened don't all
+  // show as "new".
+  const [seenVocNos, setSeenVocNos] = useState<Set<string>>(new Set());
+  const seenSeededRef = React.useRef(false);
+  const markVocSeen = (vocNo: string) => {
+    setSeenVocNos((prev) => (prev.has(vocNo) ? prev : new Set(prev).add(vocNo)));
+  };
+
   useEffect(() => {
     // only toast on ok<->error transitions, not every 10s poll
     const wasOkRef = { current: true };
@@ -48,6 +58,10 @@ export default function VocDashboardPage() {
         .then((data: VocCase[]) => {
           setCases(data);
           setLoadError(null);
+          if (!seenSeededRef.current) {
+            seenSeededRef.current = true;
+            setSeenVocNos(new Set(data.map((c) => c.vocNo)));
+          }
           if (!wasOkRef.current) notify('success', 'เชื่อมต่อ backend VOC สำเร็จอีกครั้ง');
           wasOkRef.current = true;
         })
@@ -187,7 +201,7 @@ export default function VocDashboardPage() {
         />
 
         {/* Data Table */}
-        <VocTable cases={paginatedCases} />
+        <VocTable cases={paginatedCases} seenVocNos={seenVocNos} onOpenCase={markVocSeen} />
 
         {/* Pagination */}
         <Pagination

@@ -1,15 +1,24 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, X, FileText, Phone, User, Calendar, AlertCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, FileText, Phone, User, Calendar, AlertCircle, AlertTriangle } from 'lucide-react';
 import { VocCase } from '@/types/voc';
+
+const CLOSED_STATUS = 'ปิดงานแล้ว';
 
 interface VocTableProps {
   cases: VocCase[];
+  seenVocNos?: Set<string>;
+  onOpenCase?: (vocNo: string) => void;
 }
 
-export const VocTable: React.FC<VocTableProps> = ({ cases }) => {
+export const VocTable: React.FC<VocTableProps> = ({ cases, seenVocNos, onOpenCase }) => {
   const [selectedCase, setSelectedCase] = useState<VocCase | null>(null);
+
+  const openCase = (c: VocCase) => {
+    setSelectedCase(c);
+    onOpenCase?.(c.vocNo);
+  };
 
   const getStatusComponent = (status: string, subBadge?: string) => {
     return (
@@ -34,6 +43,7 @@ export const VocTable: React.FC<VocTableProps> = ({ cases }) => {
         <table className="w-full text-left border-collapse min-w-[980px]">
           <thead>
             <tr className="border-b border-gray-200 bg-white text-[12.5px] font-bold text-gray-800">
+              <th className="py-3.5 px-2 w-8"></th>
               <th className="py-3.5 px-4 w-14 text-center">ลำดับ</th>
               <th className="py-3.5 px-4 whitespace-nowrap">หมายเลขเสียง</th>
               <th className="py-3.5 px-4 whitespace-nowrap">สถานะ</th>
@@ -49,13 +59,20 @@ export const VocTable: React.FC<VocTableProps> = ({ cases }) => {
           <tbody className="divide-y divide-gray-100 text-[12.5px] text-gray-700">
             {cases.length === 0 ? (
               <tr>
-                <td colSpan={10} className="py-12 text-center text-gray-400 font-medium">
+                <td colSpan={11} className="py-12 text-center text-gray-400 font-medium">
                   ไม่พบรายการคำร้องตามเงื่อนไขที่ค้นหา
                 </td>
               </tr>
             ) : (
               cases.map((c, index) => (
                 <tr key={c.vocNo} className="hover:bg-purple-50/30 transition-colors">
+                  {/* แจ้งเตือนคำร้องใหม่ยังไม่ได้เปิดดู */}
+                  <td className="py-4 px-2 text-center">
+                    {c.status !== CLOSED_STATUS && !seenVocNos?.has(c.vocNo) ? (
+                      <AlertTriangle className="w-3.5 h-3.5 text-red-600 animate-pulse mx-auto" aria-label="คำร้องใหม่ยังไม่ได้เปิดดู" />
+                    ) : null}
+                  </td>
+
                   {/* ลำดับ */}
                   <td className="py-4 px-4 text-center text-gray-500 font-medium">
                     {index + 1}
@@ -64,7 +81,7 @@ export const VocTable: React.FC<VocTableProps> = ({ cases }) => {
                   {/* หมายเลขเสียง */}
                   <td className="py-4 px-4 whitespace-nowrap font-semibold">
                     <button
-                      onClick={() => setSelectedCase(c)}
+                      onClick={() => openCase(c)}
                       className="text-[#6b21a8] hover:text-[#581c87] underline decoration-1 underline-offset-2 hover:decoration-2 font-bold cursor-pointer transition"
                     >
                       {c.vocNo}
