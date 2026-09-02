@@ -10,7 +10,7 @@ interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = ({ 
   onRefresh, 
-  activeBranch = 'กฟอ.ระโนด' 
+  activeBranch = 'กฟจ.นราธิวาส'
 }) => {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
 

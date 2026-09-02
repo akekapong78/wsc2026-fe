@@ -260,7 +260,7 @@ export const EventListTable: React.FC<EventListTableProps> = ({
                     {columns.map((col, i) => (
                       <td
                         key={col.label}
-                        className={`px-2 py-1.5 ${i < columns.length - 1 ? `border-r ${isSelected ? 'border-blue-400' : 'border-[#e0e0e0]'}` : ''} ${col.className || ''} ${isSelected && col.className?.includes('text-blue-900') ? 'text-white' : ''}`}
+                        className={`px-2 py-1.5 whitespace-nowrap ${i < columns.length - 1 ? `border-r ${isSelected ? 'border-blue-400' : 'border-[#e0e0e0]'}` : ''} ${col.className || ''} ${isSelected && col.className?.includes('text-blue-900') ? 'text-white' : ''}`}
                       >
                         {col.render(ev, isSelected)}
                       </td>

@@ -8,7 +8,7 @@ interface FooterProps {
 }
 
 export const Footer: React.FC<FooterProps> = ({
-  userRole = 'กฟอ.ระโนด',
+  userRole = 'กฟจ.นราธิวาส',
   ipAddress = '172.30.152.205'
 }) => {
   return (

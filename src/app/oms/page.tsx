@@ -127,7 +127,7 @@ export default function OmsDashboardPage() {
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-[#e0e0e0] font-sans antialiased text-[#222]">
       {/* 1. Top Navbar */}
-      <Navbar onRefresh={loadData} activeBranch="กฟอ.ระโนด" />
+      <Navbar onRefresh={loadData} activeBranch="กฟจ.นราธิวาส" />
 
       {/* 2. Main Content Split Body */}
       <div className="flex-1 flex overflow-hidden relative">
@@ -186,7 +186,7 @@ export default function OmsDashboardPage() {
       </div>
 
       {/* 3. Bottom Red Status Footer */}
-      <Footer userRole="กฟอ.ระโนด" ipAddress="172.30.152.205" />
+      <Footer userRole="กฟจ.นราธิวาส" ipAddress="172.30.152.205" />
     </div>
   );
 }
