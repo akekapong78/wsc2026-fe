@@ -8,6 +8,7 @@ import { VocTable } from '@/components/voc/VocTable';
 import { Pagination } from '@/components/voc/Pagination';
 import { Footer } from '@/components/voc/Footer';
 import { VocCase, VocFilterState } from '@/types/voc';
+import { useToast, ToastStack } from '@/components/Toast';
 
 // Default status filter is empty: real wsc2026-be status labels (e.g.
 // "รับเรื่องแล้ว", "อยู่ระหว่างดำเนินการ") don't match the old mock-data
@@ -27,6 +28,7 @@ const DEFAULT_FILTERS: VocFilterState = {
 };
 
 export default function VocDashboardPage() {
+  const { toasts, notify, dismiss } = useToast();
   const [cases, setCases] = useState<VocCase[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -35,6 +37,8 @@ export default function VocDashboardPage() {
   const [filters, setFilters] = useState<VocFilterState>(DEFAULT_FILTERS);
 
   useEffect(() => {
+    // only toast on ok<->error transitions, not every 10s poll
+    const wasOkRef = { current: true };
     const load = () =>
       fetch('/voc/api/voc/cases')
         .then((res) => {
@@ -44,13 +48,20 @@ export default function VocDashboardPage() {
         .then((data: VocCase[]) => {
           setCases(data);
           setLoadError(null);
+          if (!wasOkRef.current) notify('success', 'เชื่อมต่อ backend VOC สำเร็จอีกครั้ง');
+          wasOkRef.current = true;
         })
-        .catch((err) => setLoadError(String(err)));
+        .catch((err) => {
+          setLoadError(String(err));
+          if (wasOkRef.current) notify('error', 'โหลดข้อมูล VOC จาก backend ไม่สำเร็จ');
+          wasOkRef.current = false;
+        });
 
     load();
     // ponytail: fixed 10s poll, swap for SSE/WebSocket push if latency matters
     const id = setInterval(load, 10_000);
     return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const resetFilters = () => {
@@ -138,6 +149,7 @@ export default function VocDashboardPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#fbfbfb] font-sans antialiased text-gray-900">
+      <ToastStack toasts={toasts} onDismiss={dismiss} />
       {/* 1. Top Header & Navbar */}
       <Navbar />
 

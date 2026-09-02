@@ -1,8 +1,15 @@
 'use client';
 
 import React, { useState } from 'react';
-import { FileText, ChevronUp, ChevronDown, Minus, CheckCircle, AlertTriangle } from 'lucide-react';
+import { FileText, ChevronUp, ChevronDown, Minus } from 'lucide-react';
 import { OutageEvent, OutageStatusCode } from '@/types/oms';
+
+const STATUS_OPTIONS: { code: OutageStatusCode; label: string }[] = [
+  { code: 'RECEIVED', label: 'รับแจ้งแล้ว' },
+  { code: 'ACKNOWLEDGED', label: 'รับทราบแล้ว' },
+  { code: 'IN_PROGRESS', label: 'กำลังดำเนินการ' },
+  { code: 'RESTORED', label: 'ปิดงาน / จ่ายไฟคืนแล้ว' },
+];
 
 interface EventDetailPanelProps {
   selectedEvent: OutageEvent | null;
@@ -19,6 +26,7 @@ export const EventDetailPanel: React.FC<EventDetailPanelProps> = ({
 }) => {
   const [activeBottomTab, setActiveBottomTab] = useState<string>('summary');
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
+  const [pendingStatus, setPendingStatus] = useState<OutageStatusCode | null>(null);
 
   const bottomTabs = [
     { id: 'summary', label: 'สรุป' },
@@ -31,11 +39,12 @@ export const EventDetailPanel: React.FC<EventDetailPanelProps> = ({
     { id: 'outage_plan_detail', label: 'รายละเอียดแผนดับไฟ' },
   ];
 
-  const handleStatusChange = async (newStatus: OutageStatusCode) => {
-    if (!selectedEvent || !onUpdateStatus) return;
+  const confirmStatusChange = async () => {
+    if (!selectedEvent || !onUpdateStatus || !pendingStatus) return;
     setIsUpdating(true);
-    await onUpdateStatus(selectedEvent.eventId, newStatus);
+    await onUpdateStatus(selectedEvent.eventId, pendingStatus);
     setIsUpdating(false);
+    setPendingStatus(null);
   };
 
   if (isCollapsed) {
@@ -77,27 +86,19 @@ export const EventDetailPanel: React.FC<EventDetailPanelProps> = ({
           {/* Quick Admin Actions (Status updater) */}
           {selectedEvent && onUpdateStatus && (
             <div className="flex items-center gap-1 mr-2">
-              {selectedEvent.status !== 'RESTORED' ? (
-                <button
-                  disabled={isUpdating}
-                  onClick={() => handleStatusChange('RESTORED')}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1 shadow-xs transition cursor-pointer"
-                  title="คลิกเพื่อปิดงาน / จ่ายไฟคืนแล้ว (ซิงค์ backend PATCH)"
-                >
-                  <CheckCircle className="w-3 h-3" />
-                  <span>ปิดงาน / จ่ายไฟคืน</span>
-                </button>
-              ) : (
-                <button
-                  disabled={isUpdating}
-                  onClick={() => handleStatusChange('IN_PROGRESS')}
-                  className="bg-amber-600 hover:bg-amber-700 text-white px-2 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1 shadow-xs transition cursor-pointer"
-                  title="คลิกเพื่อเปิดงานต่อ (กำลังดำเนินการ)"
-                >
-                  <AlertTriangle className="w-3 h-3" />
-                  <span>เปิดดำเนินงานต่อ</span>
-                </button>
-              )}
+              <select
+                disabled={isUpdating}
+                value={selectedEvent.status}
+                onChange={(e) => setPendingStatus(e.target.value as OutageStatusCode)}
+                title="เปลี่ยนสถานะ (ต้องกดยืนยันอีกรอบ)"
+                className="h-[20px] px-1 text-[10px] font-semibold bg-white border border-gray-400 rounded-xs shadow-inner cursor-pointer disabled:opacity-50 disabled:cursor-wait"
+              >
+                {STATUS_OPTIONS.map((s) => (
+                  <option key={s.code} value={s.code}>
+                    {s.label}
+                  </option>
+                ))}
+              </select>
             </div>
           )}
 
@@ -310,6 +311,41 @@ export const EventDetailPanel: React.FC<EventDetailPanelProps> = ({
           </div>
         )}
       </div>
+
+      {/* Confirm dialog — dropdown only stages pendingStatus, PATCH fires on ยืนยัน */}
+      {pendingStatus && selectedEvent && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-lg shadow-xl border border-gray-300 w-[320px] text-[12px]">
+            <div className="px-4 py-3 border-b border-gray-200 font-bold text-gray-900">
+              ยืนยันเปลี่ยนสถานะ
+            </div>
+            <div className="px-4 py-3 text-gray-700 space-y-1">
+              <div>เหตุการณ์ <span className="font-mono font-semibold">{selectedEvent.eventId}</span></div>
+              <div>
+                {selectedEvent.statusLabel} → <span className="font-bold text-blue-900">
+                  {STATUS_OPTIONS.find((s) => s.code === pendingStatus)?.label}
+                </span>
+              </div>
+            </div>
+            <div className="px-4 py-3 border-t border-gray-200 flex justify-end gap-2">
+              <button
+                disabled={isUpdating}
+                onClick={() => setPendingStatus(null)}
+                className="px-3 py-1.5 rounded bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold cursor-pointer disabled:opacity-50"
+              >
+                ยกเลิก
+              </button>
+              <button
+                disabled={isUpdating}
+                onClick={confirmStatusChange}
+                className="px-3 py-1.5 rounded bg-blue-700 hover:bg-blue-800 text-white font-semibold cursor-pointer disabled:opacity-50"
+              >
+                {isUpdating ? 'กำลังบันทึก...' : 'ยืนยัน'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

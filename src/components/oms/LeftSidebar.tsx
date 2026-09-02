@@ -385,23 +385,23 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
             <div>
               <label className="block font-semibold mb-0.5">จังหวัด / เขตพื้นที่</label>
               <select className="w-full h-[24px] border border-gray-400 rounded-xs px-1 text-[11px] bg-white">
-                <option>กฟภ. เขต 3 (ภาคใต้) จ.สงขลา</option>
+                <option>เขตพื้นที่ภาคใต้ จ.นราธิวาส</option>
                 <option>สำนักงานใหญ่ กฟภ. (จตุจักร)</option>
               </select>
             </div>
             <div>
               <label className="block font-semibold mb-0.5">การไฟฟ้าสาขา / กฟอ.</label>
               <select className="w-full h-[24px] border border-gray-400 rounded-xs px-1 text-[11px] bg-white">
-                <option>กฟอ.ระโนด</option>
-                <option>กฟจ.สงขลา</option>
-                <option>กฟอ.หาดใหญ่</option>
+                <option>กฟจ.นราธิวาส</option>
+                <option>กฟอ.สุไหงโก-ลก</option>
+                <option>กฟอ.ตากใบ</option>
               </select>
             </div>
             <div>
               <label className="block font-semibold mb-0.5">ตำบล / แขวง</label>
               <input
                 type="text"
-                placeholder="เช่น ต.ระโนด, ต.ปากแตระ"
+                placeholder="เช่น ต.บางนาค, ต.กะลุวอ"
                 className="w-full h-[22px] px-2 text-[11px] border border-gray-400 rounded-xs bg-white"
               />
             </div>

@@ -63,6 +63,7 @@ export const INITIAL_CUSTOMERS: Customer[] = [
 export const INITIAL_OUTAGES: OutageEvent[] = [
   {
     eventId: 'OMS-TR-0001',
+    source: 'OUTAGE_EVENT',
     caNumber: '100000000001',
     level: 'TRANSFORMER',
     status: 'IN_PROGRESS',
@@ -100,6 +101,7 @@ export const INITIAL_OUTAGES: OutageEvent[] = [
   },
   {
     eventId: 'OMS-FDR-0001',
+    source: 'OUTAGE_EVENT',
     caNumber: '100000000002',
     level: 'FEEDER',
     status: 'IN_PROGRESS',
@@ -137,6 +139,7 @@ export const INITIAL_OUTAGES: OutageEvent[] = [
   },
   {
     eventId: 'OMS-MTR-0001',
+    source: 'OUTAGE_EVENT',
     caNumber: '100000000003',
     level: 'METER',
     status: 'RECEIVED',
@@ -173,6 +176,7 @@ export const INITIAL_OUTAGES: OutageEvent[] = [
   },
   {
     eventId: 'OMS-FDR-0002',
+    source: 'OUTAGE_EVENT',
     caNumber: '100000000004',
     level: 'FEEDER',
     status: 'ACKNOWLEDGED',
@@ -209,6 +213,7 @@ export const INITIAL_OUTAGES: OutageEvent[] = [
   },
   {
     eventId: 'OMS-TR-0002',
+    source: 'OUTAGE_EVENT',
     caNumber: '100000000005',
     level: 'TRANSFORMER',
     status: 'RESTORED',

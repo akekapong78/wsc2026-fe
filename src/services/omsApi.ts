@@ -22,7 +22,9 @@ export async function fetchAdminStatuses(): Promise<OmsStatus[]> {
   return INITIAL_STATUSES;
 }
 
-export async function fetchAdminOutages(): Promise<OutageEvent[]> {
+// Returns null (not []) on failure so callers can tell "backend error" apart
+// from "genuinely no outages right now" and show a toast only for the former.
+export async function fetchAdminOutages(): Promise<OutageEvent[] | null> {
   try {
     const res = await fetch('/oms/api/outages', {
       cache: 'no-store',
@@ -30,7 +32,7 @@ export async function fetchAdminOutages(): Promise<OutageEvent[]> {
 
     if (res.ok) {
       const data = await res.json();
-      if (Array.isArray(data) && data.length > 0) {
+      if (Array.isArray(data)) {
         return data;
       }
     }
@@ -38,16 +40,17 @@ export async function fetchAdminOutages(): Promise<OutageEvent[]> {
     console.error('Error fetching live outages from backend:', err);
   }
 
-  return [];
+  return null;
 }
 
 export async function updateOutageStatus(
   eventId: string,
   status: OutageStatusCode,
+  source: 'OUTAGE_EVENT' | 'ANONYMOUS_REPORT',
   message?: string
 ): Promise<boolean> {
   try {
-    const res = await fetch(`/oms/api/outages/${eventId}`, {
+    const res = await fetch(`/oms/api/outages/${eventId}?source=${source}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',

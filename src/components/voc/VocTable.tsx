@@ -40,6 +40,7 @@ export const VocTable: React.FC<VocTableProps> = ({ cases }) => {
               <th className="py-3.5 px-4 text-center whitespace-nowrap">รวมคำร้อง</th>
               <th className="py-3.5 px-4 min-w-[280px]">ประเภท/หัวข้อ/ประเด็น/ประเด็นย่อย</th>
               <th className="py-3.5 px-4 whitespace-nowrap">การไฟฟ้า</th>
+              <th className="py-3.5 px-4 whitespace-nowrap">เบอร์ติดต่อกลับ</th>
               <th className="py-3.5 px-4 text-center whitespace-nowrap">WBS</th>
               <th className="py-3.5 px-4 text-center whitespace-nowrap">ระยะเวลา</th>
               <th className="py-3.5 px-4 text-center whitespace-nowrap">เฉลี่ย...</th>
@@ -48,7 +49,7 @@ export const VocTable: React.FC<VocTableProps> = ({ cases }) => {
           <tbody className="divide-y divide-gray-100 text-[12.5px] text-gray-700">
             {cases.length === 0 ? (
               <tr>
-                <td colSpan={9} className="py-12 text-center text-gray-400 font-medium">
+                <td colSpan={10} className="py-12 text-center text-gray-400 font-medium">
                   ไม่พบรายการคำร้องตามเงื่อนไขที่ค้นหา
                 </td>
               </tr>
@@ -96,6 +97,11 @@ export const VocTable: React.FC<VocTableProps> = ({ cases }) => {
                   {/* การไฟฟ้า */}
                   <td className="py-4 px-4 whitespace-nowrap text-gray-700 font-medium">
                     {c.peaBranch}
+                  </td>
+
+                  {/* เบอร์ติดต่อกลับ */}
+                  <td className="py-4 px-4 whitespace-nowrap font-mono text-[11.5px] text-gray-700">
+                    {c.phone || '-'}
                   </td>
 
                   {/* WBS */}

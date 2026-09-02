@@ -22,6 +22,10 @@ export interface OmsStatus {
 
 export interface OutageEvent {
   eventId: string;
+  // which backend table this row lives in — GET /oms/admin/outages merges
+  // oms_outage_events and oms_anonymous_reports into one list, but they're
+  // edited through different PATCH endpoints (see omsApi.updateOutageStatus)
+  source: 'OUTAGE_EVENT' | 'ANONYMOUS_REPORT';
   caNumber: string;
   level: EventLevel;
   status: OutageStatusCode;
@@ -29,7 +33,8 @@ export interface OutageEvent {
   message: string;
   startedAt: string;
   estimatedRestoreAt?: string | null;
-  
+  contactPhone?: string | null;
+
   // Extended UI / OMS attributes matching eRespond screen
   type: string;
   cause: string;

@@ -3,42 +3,16 @@ import { NextResponse } from 'next/server';
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8080';
 const API_KEY = process.env.API_KEY || '88888888';
 
-// Realistic GIS location mapping by CA & Device in Bangkok (PEA HQ / Ngamwongwan matching screenshot)
-const CA_GIS_MAP: Record<string, { lat: number; lng: number; address: string; subDistrict: string; district: string; province: string; affected: number; vip: string }> = {
-  '100000000001': {
-    lat: 13.8505,
-    lng: 100.5590,
-    address: 'สำนักงานใหญ่ กฟภ. / คลองเปรม ถนนงามวงศ์วาน แขวงลาดยาว เขตจตุจักร กทม.',
-    subDistrict: 'ลาดยาว',
-    district: 'จตุจักร',
-    province: 'กรุงเทพมหานคร',
-    affected: 120,
-    vip: 'ศูนย์บริการสาธารณสุข',
-  },
-  '100000000002': {
-    lat: 13.8440,
-    lng: 100.5650,
-    address: 'ถนนงามวงศ์วาน ใกล้เรือนจำกลางคลองเปรม แขวงลาดยาว เขตจตุจักร กทม.',
-    subDistrict: 'ลาดยาว',
-    district: 'จตุจักร',
-    province: 'กรุงเทพมหานคร',
-    affected: 850,
-    vip: 'สถานีสูบน้ำคลองเปรม',
-  },
-  '100000000003': {
-    lat: 13.8560,
-    lng: 100.5730,
-    address: 'ซอยงามวงศ์วาน 57 แขวงลาดยาว เขตจตุจักร กทม.',
-    subDistrict: 'ลาดยาว',
-    district: 'จตุจักร',
-    province: 'กรุงเทพมหานคร',
-    affected: 1,
-    vip: 'บ้านพักอาศัย',
-  },
-};
+interface OutageTask {
+  activity: string;
+  estimatedDate: string;
+  actualDate: string | null;
+  status: 'COMPLETED' | 'IN_PROGRESS' | 'PENDING';
+}
 
 interface OutageRow {
-  eventId: string;
+  id: string; // AdminOutageEntry.ID — GET /oms/admin/outages is the merged list shape, not AdminOutageEvent
+  source: 'OUTAGE_EVENT' | 'ANONYMOUS_REPORT';
   caNumber: string;
   level: string;
   status: string;
@@ -47,11 +21,27 @@ interface OutageRow {
   startedAt?: string;
   estimatedRestoreAt?: string | null;
   location?: { lat: number; lon: number; gisType?: string };
+  contactPhone: string | null;
+  severity: string;
+  cause: string;
+  peaBranch: string;
+  address: string | null;
+  subDistrict: string | null;
+  district: string | null;
+  province: string | null;
+  affectedCount: number;
+  priorityCustomers: number;
+  vipCustomers: number;
+  vipDetails: string | null;
+  repeatedOutage: boolean;
+  tasks: OutageTask[];
 }
 
 export async function GET() {
   try {
-    // 1. Fetch live outages from backend admin endpoint
+    // 1. Fetch live outages from backend admin endpoint (already carries
+    // severity/cause/peaBranch/address/impact/tasks — real columns, see
+    // wsc2026-be/migrations/20260902110000_add_outage_detail_fields.sql)
     const res = await fetch(`${BACKEND_URL}/api/v1/oms/admin/outages`, {
       headers: {
         'X-API-Key': API_KEY,
@@ -70,9 +60,9 @@ export async function GET() {
 
     // 2. Fetch network relationship (CA -> Meter -> Transformer -> Feeder) for each outage
     const enrichedOutages = await Promise.all(
-      outages.map(async (item, idx) => {
+      outages.map(async (item) => {
         let network = { meterId: 'MTR-001', transformerId: 'TR-001', feederId: 'FDR-01' };
-        
+
         try {
           const caRes = await fetch(`${BACKEND_URL}/api/v1/oms/outages/by-ca/${item.caNumber}`, {
             headers: { 'X-API-Key': API_KEY },
@@ -98,25 +88,6 @@ export async function GET() {
           deviceName = `${network.meterId} (${network.transformerId})`;
         }
 
-        // Location & Impact — prefer real coordinates from backend, only fall back when missing
-        const fallbackGis = CA_GIS_MAP[item.caNumber] || {
-          lat: 13.8505 + (idx * 0.005) - 0.002,
-          lng: 100.5590 + (idx * 0.006) - 0.003,
-          address: `พื้นที่บริการ กฟภ. (หมายเลขผู้ใช้ไฟ CA: ${item.caNumber})`,
-          subDistrict: 'ลาดยาว',
-          district: 'จตุจักร',
-          province: 'กรุงเทพมหานคร',
-          affected: item.level === 'FEEDER' ? 500 : item.level === 'TRANSFORMER' ? 80 : 1,
-          vip: 'ผู้ใช้ไฟทั่วไป',
-        };
-        const gisInfo = item.location
-          ? {
-              ...fallbackGis,
-              lat: item.location.lat,
-              lng: item.location.lon,
-            }
-          : fallbackGis;
-
         const formatThaiTime = (isoString?: string) => {
           if (!isoString) return '01/09/2569 08:00';
           try {
@@ -130,56 +101,44 @@ export async function GET() {
         const isRestored = item.status === 'RESTORED';
 
         return {
-          eventId: item.eventId,
+          eventId: item.id,
+          source: item.source,
           caNumber: item.caNumber,
           level: item.level,
           status: item.status,
           statusLabel: item.statusLabel || (isRestored ? 'ปิดงาน / จ่ายไฟคืนแล้ว' : item.status === 'IN_PROGRESS' ? 'กำลังดำเนินการ' : item.status === 'ACKNOWLEDGED' ? 'รับทราบแล้ว' : 'รับแจ้งแล้ว'),
           message: item.message,
+          contactPhone: item.contactPhone,
           startedAt: formatThaiTime(item.startedAt),
           estimatedRestoreAt: item.estimatedRestoreAt ? formatThaiTime(item.estimatedRestoreAt) : null,
           type: item.level === 'FEEDER' ? 'แจ้งปัญหาสาเหตุระบบไฟฟ้า' : 'ไฟฟ้าขัดข้อง',
-          cause: item.level === 'FEEDER' ? 'สายส่งแรงสูงขัดข้อง (Recloser Trip)' : item.level === 'TRANSFORMER' ? 'ฟิวส์แรงสูงหม้อแปลงชำรุด' : 'มิเตอร์ขัดข้อง/กระแสไฟฟ้าตัดวงจร',
-          peaBranch: 'กฟอ.ระโนด',
+          cause: item.cause,
+          peaBranch: item.peaBranch,
           reasonDetail: item.message,
           device: deviceName,
           location: {
-            lat: gisInfo.lat,
-            lng: gisInfo.lng,
-            address: gisInfo.address,
-            subDistrict: gisInfo.subDistrict,
-            district: gisInfo.district,
-            province: gisInfo.province,
+            lat: item.location?.lat ?? 13.8505,
+            lng: item.location?.lon ?? 100.5590,
+            address: item.address || `พื้นที่บริการ กฟภ. (หมายเลขผู้ใช้ไฟ CA: ${item.caNumber})`,
+            subDistrict: item.subDistrict ?? undefined,
+            district: item.district ?? undefined,
+            province: item.province ?? undefined,
           },
           impact: {
-            currentAffected: isRestored ? 0 : gisInfo.affected,
-            initialAffected: gisInfo.affected,
-            priorityCustomers: item.level === 'FEEDER' ? 6 : item.level === 'TRANSFORMER' ? 2 : 0,
-            vipCustomers: item.level === 'FEEDER' ? 2 : item.level === 'TRANSFORMER' ? 1 : 0,
-            vipDetails: gisInfo.vip,
+            currentAffected: isRestored ? 0 : item.affectedCount,
+            initialAffected: item.affectedCount,
+            priorityCustomers: item.priorityCustomers,
+            vipCustomers: item.vipCustomers,
+            vipDetails: item.vipDetails ?? undefined,
           },
-          severity: item.level === 'FEEDER' ? 'วิกฤต' : item.level === 'TRANSFORMER' ? 'สูง' : 'ต่ำ',
-          repeatedOutage: false,
-          tasks: [
-            {
-              activity: 'รับแจ้งเหตุและตรวจสอบโครงข่ายระบบไฟฟ้า OMS',
-              estimatedDate: formatThaiTime(item.startedAt),
-              actualDate: formatThaiTime(item.startedAt),
-              status: 'COMPLETED',
-            },
-            {
-              activity: `ส่งทีมชุดปฏิบัติการตรวจสอบอุปกรณ์ ${deviceName}`,
-              estimatedDate: '01/09/2569 10:00',
-              actualDate: isRestored ? '01/09/2569 10:15' : '-',
-              status: isRestored ? 'COMPLETED' : 'IN_PROGRESS',
-            },
-            {
-              activity: 'ทดสอบแรงดันและจ่ายกระแสไฟฟ้าคืนระบบ',
-              estimatedDate: '01/09/2569 12:00',
-              actualDate: isRestored ? '01/09/2569 11:45' : '-',
-              status: isRestored ? 'COMPLETED' : 'PENDING',
-            },
-          ],
+          severity: item.severity,
+          repeatedOutage: item.repeatedOutage,
+          tasks: (item.tasks || []).map((t) => ({
+            activity: t.activity,
+            estimatedDate: formatThaiTime(t.estimatedDate),
+            actualDate: t.actualDate ? formatThaiTime(t.actualDate) : '-',
+            status: t.status,
+          })),
         };
       })
     );

@@ -106,6 +106,7 @@ export const EventListTable: React.FC<EventListTableProps> = ({
     { label: 'ประเภท', render: (ev) => ev.type, className: 'truncate max-w-[120px]' },
     { label: 'สาเหตุ', render: (ev) => ev.cause, className: 'truncate max-w-[140px]' },
     { label: 'กฟฟ.', render: (ev) => ev.peaBranch },
+    { label: 'เบอร์ติดต่อกลับ', render: (ev) => ev.contactPhone || '-', className: 'font-mono text-[11px]' },
     { label: 'อุปกรณ์', render: (ev) => ev.device, className: 'font-mono text-[11px]' },
     { label: 'ผู้ใช้ไฟกระทบ', render: (ev) => ev.impact.currentAffected.toLocaleString() },
     { label: 'เวลาเริ่ม', render: (ev) => ev.startedAt, className: 'whitespace-nowrap' },

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Navbar } from '@/components/oms/Navbar';
 import { LeftSidebar } from '@/components/oms/LeftSidebar';
 import { EventListTable } from '@/components/oms/EventListTable';
@@ -9,8 +9,10 @@ import { MapPanel } from '@/components/oms/MapPanel';
 import { Footer } from '@/components/oms/Footer';
 import { OutageEvent, FilterState, OutageStatusCode } from '@/types/oms';
 import { fetchAdminOutages, updateOutageStatus } from '@/services/omsApi';
+import { useToast, ToastStack } from '@/components/Toast';
 
 export default function OmsDashboardPage() {
+  const { toasts, notify, dismiss } = useToast();
   const [allEvents, setAllEvents] = useState<OutageEvent[]>([]);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -20,10 +22,18 @@ export default function OmsDashboardPage() {
   const [activeTopTab, setActiveTopTab] = useState<string>('general');
 
   // Load from Backend API
+  const wasOkRef = useRef(true); // only toast on ok<->error transitions, not every 10s poll
   const loadData = async () => {
     setIsLoading(true);
     try {
       const data = await fetchAdminOutages();
+      if (data === null) {
+        if (wasOkRef.current) notify('error', 'โหลดข้อมูล OMS จาก backend ไม่สำเร็จ');
+        wasOkRef.current = false;
+        return;
+      }
+      if (!wasOkRef.current) notify('success', 'เชื่อมต่อ backend OMS สำเร็จอีกครั้ง');
+      wasOkRef.current = true;
       setAllEvents(data);
       // functional update: avoids stale closure over selectedEventId in the polling interval
       setSelectedEventId((prev) => prev ?? data[0]?.eventId ?? null);
@@ -69,9 +79,20 @@ export default function OmsDashboardPage() {
     });
   };
 
+  // Urgency order for the event table — unacknowledged reports need triage
+  // first, closed ones are least urgent. Array.sort is stable, so events
+  // keep the backend's startedAt-desc order within the same status.
+  const STATUS_PRIORITY: Record<OutageStatusCode, number> = {
+    RECEIVED: 0,
+    ACKNOWLEDGED: 1,
+    IN_PROGRESS: 2,
+    RESTORED: 3,
+  };
+
   // Filtered Events
   const filteredEvents = useMemo(() => {
-    return allEvents.filter((ev) => {
+    return allEvents
+      .filter((ev) => {
       // Keyword search (eventId or CA or message or address)
       if (filters.keyword.trim()) {
         const q = filters.keyword.toLowerCase();
@@ -105,7 +126,8 @@ export default function OmsDashboardPage() {
       }
 
       return true;
-    });
+    })
+      .sort((a, b) => STATUS_PRIORITY[a.status] - STATUS_PRIORITY[b.status]);
   }, [allEvents, filters]);
 
   const selectedEvent = useMemo(() => {
@@ -118,14 +140,18 @@ export default function OmsDashboardPage() {
   };
 
   const handleUpdateStatus = async (eventId: string, newStatus: OutageStatusCode) => {
+    // source decides which admin endpoint to PATCH — see omsApi.updateOutageStatus
+    const source = allEvents.find((e) => e.eventId === eventId)?.source ?? 'OUTAGE_EVENT';
     // 1. Call Backend PATCH
-    await updateOutageStatus(eventId, newStatus);
+    const ok = await updateOutageStatus(eventId, newStatus, source);
+    notify(ok ? 'success' : 'error', ok ? 'อัปเดตสถานะสำเร็จ' : 'อัปเดตสถานะไม่สำเร็จ ลองใหม่อีกครั้ง');
     // 2. Reload fresh live data from BE
     await loadData();
   };
 
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-[#e0e0e0] font-sans antialiased text-[#222]">
+      <ToastStack toasts={toasts} onDismiss={dismiss} />
       {/* 1. Top Navbar */}
       <Navbar onRefresh={loadData} activeBranch="กฟจ.นราธิวาส" />
 

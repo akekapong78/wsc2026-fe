@@ -6,7 +6,7 @@ import { VocCase } from '@/types/voc';
 interface AdminCase {
   caseId: string;
   vocNumber: string;
-  status: string;
+  status: string; // CaseStatus code, e.g. RESOLVED — used for KPI derivation below
   statusLabel: string;
   journeyCode: string;
   classification: {
@@ -81,10 +81,20 @@ function formatThaiDateTime(iso: string): string {
   return new Date(iso).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
 }
 
+// SLA thresholds for the overdue/near-due KPI cards — wsc2026-be doesn't
+// model a due date yet, so derive from case age instead.
+// ponytail: flat day-count heuristic, swap for a real due-date field if a
+// per-journey SLA gets defined server-side.
+const OVERDUE_DAYS = 7;
+const NEAR_DUE_DAYS = 5;
+const CLOSED_STATUSES = ['RESOLVED', 'REJECTED', 'CANCELLED'];
+
 function toVocCase(c: AdminCase, taxonomy: ReturnType<typeof buildTaxonomyMaps>, index: number): VocCase {
   const { requestTypeName, topicName, issueName, subIssueName, peaOfficeName } = taxonomy;
   const cls = c.classification;
   const reporter = c.reporter;
+  const durationDays = Math.max(0, Math.floor((Date.now() - new Date(c.createdAt).getTime()) / 86_400_000));
+  const isClosed = CLOSED_STATUSES.includes(c.status);
   return {
     id: index + 1,
     vocNo: c.vocNumber,
@@ -98,7 +108,11 @@ function toVocCase(c: AdminCase, taxonomy: ReturnType<typeof buildTaxonomyMaps>,
     subIssue: cls.subIssueCode ? subIssueName.get(cls.subIssueCode) ?? cls.subIssueCode : '',
     peaBranch: peaOfficeName.get(c.incident.peaOfficeCode) ?? c.incident.peaOfficeCode,
     wbs: 'ไม่มี',
-    durationDays: Math.max(0, Math.floor((Date.now() - new Date(c.createdAt).getTime()) / 86_400_000)),
+    durationDays,
+    isOverdue: !isClosed && durationDays > OVERDUE_DAYS,
+    isNearDue: !isClosed && durationDays > NEAR_DUE_DAYS && durationDays <= OVERDUE_DAYS,
+    isForwarded: false, // no forwarding data modeled by wsc2026-be yet
+    isReadyToClose: c.status === 'RESOLVED',
     phone: reporter?.phone,
     caNumber: reporter?.caNumber,
     detail: c.detail,
