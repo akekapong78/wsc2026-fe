@@ -42,8 +42,8 @@ export interface OutageEvent {
   reasonDetail: string;
   device: string; // e.g. TR-001, FDR-02, MTR-001
   location: {
-    lat: number;
-    lng: number;
+    lat: number | null;
+    lng: number | null;
     address: string;
     subDistrict?: string;
     district?: string;

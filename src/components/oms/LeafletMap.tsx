@@ -76,8 +76,10 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
     markersRef.current = {};
 
     events.forEach((ev) => {
+      // No real GIS/GPS match — skip the pin instead of guessing a location
+      if (ev.location.lat == null || ev.location.lng == null) return;
       const isSelected = selectedEvent?.eventId === ev.eventId;
-      
+
       // Determine marker color and icon style
       let markerBg = '#dc2626'; // Red for Feeder
       let levelLabel = 'FEEDER';
@@ -145,16 +147,18 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
   const hasFitBoundsRef = useRef(false);
   useEffect(() => {
     const map = mapInstanceRef.current;
-    if (!map || hasFitBoundsRef.current || events.length === 0) return;
+    if (!map || hasFitBoundsRef.current) return;
+    const located = events.filter((ev) => ev.location.lat != null && ev.location.lng != null);
+    if (located.length === 0) return;
     hasFitBoundsRef.current = true;
-    const bounds = L.latLngBounds(events.map((ev) => [ev.location.lat, ev.location.lng]));
+    const bounds = L.latLngBounds(located.map((ev) => [ev.location.lat as number, ev.location.lng as number]));
     map.fitBounds(bounds, { padding: [48, 48], maxZoom: 16 });
   }, [events]);
 
   // Center + zoom to the selected event's marker on click
   useEffect(() => {
     const map = mapInstanceRef.current;
-    if (!map || !selectedEvent) return;
+    if (!map || !selectedEvent || selectedEvent.location.lat == null || selectedEvent.location.lng == null) return;
 
     map.flyTo([selectedEvent.location.lat, selectedEvent.location.lng], Math.max(map.getZoom(), 14), {
       animate: true,

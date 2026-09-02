@@ -117,8 +117,11 @@ export async function GET() {
           reasonDetail: item.message,
           device: deviceName,
           location: {
-            lat: item.location?.lat ?? 13.8505,
-            lng: item.location?.lon ?? 100.5590,
+            // Don't fake a location when GIS has no match (e.g. anonymous
+            // report with no CA and no browser GPS) — a fabricated default
+            // used to silently mislocate real events to Bangkok.
+            lat: item.location?.lat ?? null,
+            lng: item.location?.lon ?? null,
             address: item.address || `พื้นที่บริการ กฟภ. (หมายเลขผู้ใช้ไฟ CA: ${item.caNumber})`,
             subDistrict: item.subDistrict ?? undefined,
             district: item.district ?? undefined,
