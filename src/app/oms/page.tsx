@@ -23,6 +23,11 @@ export default function OmsDashboardPage() {
 
   // Load from Backend API
   const wasOkRef = useRef(true); // only toast on ok<->error transitions, not every 10s poll
+  // Rows the user hasn't looked at yet (via row click) get an alert icon.
+  // Seeded with the first poll's ids so events that already existed before
+  // the dashboard was opened don't all show as "new".
+  const [seenEventIds, setSeenEventIds] = useState<Set<string>>(new Set());
+  const seenSeededRef = useRef(false);
   const loadData = async () => {
     setIsLoading(true);
     try {
@@ -35,6 +40,10 @@ export default function OmsDashboardPage() {
       if (!wasOkRef.current) notify('success', 'เชื่อมต่อ backend OMS สำเร็จอีกครั้ง');
       wasOkRef.current = true;
       setAllEvents(data);
+      if (!seenSeededRef.current) {
+        seenSeededRef.current = true;
+        setSeenEventIds(new Set(data.map((e) => e.eventId)));
+      }
       // functional update: avoids stale closure over selectedEventId in the polling interval
       setSelectedEventId((prev) => prev ?? data[0]?.eventId ?? null);
     } finally {
@@ -137,6 +146,7 @@ export default function OmsDashboardPage() {
 
   const handleSelectEvent = (event: OutageEvent) => {
     setSelectedEventId(event.eventId);
+    setSeenEventIds((prev) => (prev.has(event.eventId) ? prev : new Set(prev).add(event.eventId)));
   };
 
   const handleUpdateStatus = async (eventId: string, newStatus: OutageStatusCode) => {
@@ -183,6 +193,7 @@ export default function OmsDashboardPage() {
                   events={filteredEvents}
                   selectedEventId={selectedEvent?.eventId || null}
                   onSelectEvent={handleSelectEvent}
+                  seenEventIds={seenEventIds}
                   activeTopTab={activeTopTab}
                   setActiveTopTab={setActiveTopTab}
                 />

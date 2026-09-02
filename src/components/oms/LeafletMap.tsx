@@ -140,12 +140,23 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
     });
   }, [events, selectedEvent, onSelectEvent]);
 
-  // Pan to selected event when selected
+  // On first load, fit the view to show every pin instead of the hardcoded
+  // Bangkok default (real events can be anywhere, e.g. Narathiwat).
+  const hasFitBoundsRef = useRef(false);
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map || hasFitBoundsRef.current || events.length === 0) return;
+    hasFitBoundsRef.current = true;
+    const bounds = L.latLngBounds(events.map((ev) => [ev.location.lat, ev.location.lng]));
+    map.fitBounds(bounds, { padding: [48, 48], maxZoom: 16 });
+  }, [events]);
+
+  // Center + zoom to the selected event's marker on click
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map || !selectedEvent) return;
 
-    map.panTo([selectedEvent.location.lat, selectedEvent.location.lng], {
+    map.flyTo([selectedEvent.location.lat, selectedEvent.location.lng], Math.max(map.getZoom(), 14), {
       animate: true,
       duration: 0.8,
     });

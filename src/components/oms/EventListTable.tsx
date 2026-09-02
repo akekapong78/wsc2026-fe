@@ -18,6 +18,7 @@ interface EventListTableProps {
   events: OutageEvent[];
   selectedEventId: string | null;
   onSelectEvent: (event: OutageEvent) => void;
+  seenEventIds: Set<string>;
   activeTopTab: string;
   setActiveTopTab: (tab: string) => void;
 }
@@ -26,6 +27,7 @@ export const EventListTable: React.FC<EventListTableProps> = ({
   events,
   selectedEventId,
   onSelectEvent,
+  seenEventIds,
   activeTopTab,
   setActiveTopTab
 }) => {
@@ -98,6 +100,14 @@ export const EventListTable: React.FC<EventListTableProps> = ({
 
   // Columns for "รายละเอียดทั่วไป" — one entry per field actually available on OutageEvent
   const columns: { label: string; render: (ev: OutageEvent, isSelected: boolean) => React.ReactNode; className?: string }[] = [
+    {
+      label: '',
+      className: 'w-6 text-center',
+      render: (ev) =>
+        ev.status !== 'RESTORED' && !seenEventIds.has(ev.eventId) ? (
+          <AlertTriangle className="w-3.5 h-3.5 text-red-600 animate-pulse mx-auto" aria-label="เหตุการณ์ใหม่ยังไม่ได้ดู" />
+        ) : null,
+    },
     { label: 'หมายเลข', render: (ev) => ev.eventId, className: 'font-semibold text-blue-900' },
     { label: 'CA', render: (ev) => ev.caNumber, className: 'font-mono text-[11px]' },
     { label: 'สถานะ', render: (ev, sel) => getStatusBadge(ev.status, ev.statusLabel, sel) },
