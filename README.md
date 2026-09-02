@@ -8,8 +8,10 @@ Merged Next.js frontend for PEA One Agent — hosts both **OMS** and **VOC** das
 
 ## Env vars
 
-- `BACKEND_URL`, `API_KEY` — OMS backend (default `http://localhost:8080` / `88888888`)
-- `VOC_API_BASE`, `VOC_API_KEY` — VOC backend
+Shared backend for both OMS and VOC API routes — copy `.env.example` to `.env.local`:
+
+- `BACKEND_URL`
+- `API_KEY`
 
 ## Dev
 

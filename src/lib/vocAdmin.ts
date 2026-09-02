@@ -40,10 +40,10 @@ interface Catalog {
 }
 
 async function vocApiFetch(path: string, init?: RequestInit): Promise<Response> {
-  const base = process.env.VOC_API_BASE;
-  const key = process.env.VOC_API_KEY;
+  const base = process.env.BACKEND_URL;
+  const key = process.env.API_KEY;
   if (!base || !key) {
-    throw new Error('VOC_API_BASE / VOC_API_KEY not set (see .env.local)');
+    throw new Error('BACKEND_URL / API_KEY not set (see .env.local)');
   }
   return fetch(`${base}${path}`, {
     ...init,
